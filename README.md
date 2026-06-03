@@ -177,7 +177,7 @@ $$\text{Calculated Price (INR)} = \text{Ordered Quantity} \times \text{Conversio
 
 ## 🔒 Test Credentials & Flow Walkthrough
 
-The seeding step creates two accounts:
+The seeding step creates two default accounts, but you can also register a custom user at any time using the new **Sign Up** link:
 
 | Role | Username | Password | Actions Allowed |
 | :--- | :--- | :--- | :--- |
