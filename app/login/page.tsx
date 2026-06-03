@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { Shield, Mail, Lock, Database, CheckCircle, AlertTriangle, Loader2, ArrowRight } from 'lucide-react';
 
 export default function LoginPage() {
@@ -231,6 +232,18 @@ export default function LoginPage() {
               )}
             </button>
           </form>
+
+          <div className="mt-4 text-center">
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              Don't have an account?{' '}
+              <Link
+                href="/signup"
+                className="font-bold text-violet-600 hover:text-violet-500 dark:text-violet-400 dark:hover:text-violet-300"
+              >
+                Sign Up
+              </Link>
+            </p>
+          </div>
 
           {/* Quick Demo Credentials */}
           <div className="mt-8 border-t border-zinc-100 pt-6 dark:border-zinc-800">
