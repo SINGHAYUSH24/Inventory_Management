@@ -59,11 +59,11 @@ export default function AdminDashboard() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // Search/Filter states
+  
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
 
-  // Product modal states
+  
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [prodName, setProdName] = useState('');
@@ -74,7 +74,7 @@ export default function AdminDashboard() {
   const [prodPrice, setProdPrice] = useState('');
   const [prodStock, setProdStock] = useState('');
 
-  // Unit modal states
+  
   const [unitModalOpen, setUnitModalOpen] = useState(false);
   const [editingUnit, setEditingUnit] = useState<DbUnit | null>(null);
   const [unitName, setUnitName] = useState('');
@@ -110,7 +110,7 @@ export default function AdminDashboard() {
       setOrders(ordData.orders || []);
       setUnits(unitData.units || []);
       
-      // Default prodUnit to first available unit code if not set
+      
       if (unitData.units && unitData.units.length > 0) {
         setProdUnit(unitData.units[0].unit_code);
       }
@@ -228,7 +228,7 @@ export default function AdminDashboard() {
     }
   };
 
-  // Unit rate CRUD handlers
+ 
   const openCreateUnitModal = () => {
     setEditingUnit(null);
     setUnitName('');
@@ -303,10 +303,10 @@ export default function AdminDashboard() {
     }
   };
 
-  // Compute categories
+  
   const categories = Array.from(new Set(products.map(p => p.category).filter(Boolean)));
 
-  // Filter products
+
   const filteredProducts = products.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           p.sku.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -315,13 +315,12 @@ export default function AdminDashboard() {
     return matchesSearch && matchesCat;
   });
 
-  // Calculate statistics
   const totalCatalogValue = products.reduce((acc, p) => acc + (p.stock_quantity * p.base_price), 0);
   const pendingOrders = orders.filter(o => o.status === 'pending').length;
 
   return (
     <div className="mx-auto max-w-7xl space-y-8">
-      {/* Title block */}
+    
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 id="page-title" className="text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50">
@@ -361,7 +360,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Alert Messaging */}
+      
       {error && (
         <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-900/30 dark:bg-red-950/20 dark:text-red-400 flex items-start gap-2.5">
           <AlertCircle className="h-5 w-5 shrink-0 text-red-600" />
@@ -375,7 +374,7 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* Statistics Cards */}
+      
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-xs dark:border-zinc-800 dark:bg-zinc-900/40">
           <div className="flex items-center justify-between">
@@ -417,7 +416,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Tabs */}
+      
       <div className="border-b border-zinc-200 dark:border-zinc-800">
         <nav className="-mb-px flex space-x-8">
           <button
@@ -487,7 +486,7 @@ export default function AdminDashboard() {
             </select>
           </div>
 
-          {/* Catalog Grid */}
+          
           {filteredProducts.length === 0 ? (
             <div className="rounded-3xl border border-dashed border-zinc-200 p-12 text-center dark:border-zinc-800">
               <Package className="mx-auto h-12 w-12 text-zinc-300" />
@@ -562,7 +561,7 @@ export default function AdminDashboard() {
         </div>
       ) : activeTab === 'orders' ? (
         <div className="space-y-6">
-          {/* Orders log view */}
+          
           {orders.length === 0 ? (
             <div className="rounded-3xl border border-dashed border-zinc-200 p-12 text-center dark:border-zinc-800">
               <ShoppingBag className="mx-auto h-12 w-12 text-zinc-300" />
@@ -576,7 +575,7 @@ export default function AdminDashboard() {
                   key={order.id} 
                   className="rounded-3xl border border-zinc-200 bg-white shadow-xs overflow-hidden dark:border-zinc-800 dark:bg-zinc-900/40"
                 >
-                  {/* Order Header */}
+                  
                   <div className="flex flex-col gap-4 border-b border-zinc-100 bg-zinc-50/50 p-6 dark:border-zinc-800 dark:bg-zinc-900/50 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <div className="flex flex-wrap items-center gap-3">
@@ -627,7 +626,7 @@ export default function AdminDashboard() {
                     </div>
                   </div>
 
-                  {/* Order Items Table */}
+                 
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs text-zinc-600 dark:text-zinc-400">
                       <thead className="bg-zinc-50/20 font-bold uppercase tracking-wider text-zinc-500 border-b border-zinc-100 dark:border-zinc-800">
@@ -680,7 +679,7 @@ export default function AdminDashboard() {
           )}
         </div>
       ) : (
-        /* Exchange Rates Tab */
+        
         <div className="space-y-6">
           <div className="rounded-2xl bg-zinc-100/50 p-4 text-sm text-zinc-700 dark:bg-zinc-900/50 dark:text-zinc-400 flex items-start gap-2.5">
             <Scale className="h-5 w-5 text-indigo-600 shrink-0 mt-0.5" />
@@ -753,7 +752,7 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* Product Creation / Editing Modal */}
+      
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
           <div className="w-full max-w-lg overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900">
@@ -893,7 +892,7 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* Exchange Rate / Unit Modal */}
+      
       {unitModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
           <div className="w-full max-w-lg overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900">

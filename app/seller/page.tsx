@@ -103,12 +103,12 @@ export default function SellerDashboard() {
     const existingIndex = basket.findIndex(item => item.product.id === product.id);
 
     if (existingIndex > -1) {
-      // Already in basket, increment by 1
+     
       const updated = [...basket];
       updated[existingIndex].quantity += 1;
       setBasket(updated);
     } else {
-      // Add new item with its own base unit as initial selection
+      
       setBasket([...basket, {
         product,
         quantity: 1,
@@ -199,7 +199,7 @@ export default function SellerDashboard() {
     }
   };
 
-  // Filter products
+  
   const categories = Array.from(new Set(products.map(p => p.category).filter(Boolean)));
   const filteredProducts = products.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -211,7 +211,7 @@ export default function SellerDashboard() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-8">
-      {/* Title block */}
+     
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 id="page-title" className="text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50">
@@ -255,7 +255,7 @@ export default function SellerDashboard() {
         </div>
       </div>
 
-      {/* Messaging alerts */}
+     
       {error && (
         <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-900/30 dark:bg-red-950/20 dark:text-red-400 flex items-start gap-2.5">
           <AlertCircle className="h-5 w-5 shrink-0 text-red-600" />
@@ -276,7 +276,7 @@ export default function SellerDashboard() {
         </div>
       ) : activeView === 'browse' ? (
         <div className="grid gap-8 lg:grid-cols-3">
-          {/* Products Panel (Left) */}
+          
           <div className="lg:col-span-2 space-y-6">
             <div className="flex flex-col gap-4 sm:flex-row">
               <div className="relative flex-1">
@@ -304,7 +304,7 @@ export default function SellerDashboard() {
               </select>
             </div>
 
-            {/* Products Grid */}
+            
             {filteredProducts.length === 0 ? (
               <div className="rounded-3xl border border-dashed border-zinc-200 p-12 text-center dark:border-zinc-800">
                 <h3 className="text-lg font-bold text-zinc-400">No products match search criteria</h3>
@@ -359,7 +359,7 @@ export default function SellerDashboard() {
             )}
           </div>
 
-          {/* Quotation Basket Panel (Right) */}
+          
           <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-xs dark:border-zinc-800 dark:bg-zinc-900/40 h-fit lg:sticky lg:top-24">
             <div className="flex items-center justify-between border-b border-zinc-100 pb-4 dark:border-zinc-800">
               <h2 className="text-lg font-bold flex items-center gap-2">
@@ -378,7 +378,7 @@ export default function SellerDashboard() {
               </div>
             ) : (
               <div className="mt-6 space-y-6">
-                {/* Basket list */}
+                
                 <div className="max-h-[380px] overflow-y-auto space-y-4 pr-1">
                   {basket.map((item, index) => {
                     const compatibleUnits = getCompatibleUnits(item.product.base_unit);
@@ -398,7 +398,7 @@ export default function SellerDashboard() {
                           </button>
                         </div>
 
-                        {/* Quantity and Unit selector */}
+                        
                         <div className="flex items-center gap-2">
                           <input
                             type="number"
@@ -422,7 +422,7 @@ export default function SellerDashboard() {
                           </div>
                         </div>
 
-                        {/* Conversion details indicator */}
+                        
                         <div className="rounded-lg bg-zinc-100 p-2 text-[10px] text-zinc-500 dark:bg-zinc-900 dark:text-zinc-400 font-mono flex items-center gap-1">
                           <Sparkles size={10} className="text-emerald-600 shrink-0" />
                           <span>{getConversionBreakdown(item)}</span>
@@ -432,7 +432,7 @@ export default function SellerDashboard() {
                   })}
                 </div>
 
-                {/* Total display */}
+              
                 <div className="border-t border-zinc-100 pt-4 dark:border-zinc-800 space-y-4">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-semibold text-zinc-500">Quotation Total</span>
@@ -461,7 +461,7 @@ export default function SellerDashboard() {
           </div>
         </div>
       ) : (
-        /* Quotation list history */
+        
         <div className="space-y-6">
           {orders.length === 0 ? (
             <div className="rounded-3xl border border-dashed border-zinc-200 p-12 text-center dark:border-zinc-800">
@@ -474,7 +474,7 @@ export default function SellerDashboard() {
                   key={order.id} 
                   className="rounded-3xl border border-zinc-200 bg-white shadow-xs overflow-hidden dark:border-zinc-800 dark:bg-zinc-900/40"
                 >
-                  {/* Order header */}
+                  
                   <div className="flex flex-col gap-4 border-b border-zinc-100 bg-zinc-50/50 p-6 dark:border-zinc-800 dark:bg-zinc-900/50 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <div className="flex items-center gap-3">
@@ -498,7 +498,7 @@ export default function SellerDashboard() {
                     </div>
                   </div>
 
-                  {/* Items list */}
+                
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs text-zinc-600 dark:text-zinc-400">
                       <thead className="bg-zinc-50/20 font-bold uppercase tracking-wider text-zinc-500 border-b border-zinc-100 dark:border-zinc-800">

@@ -38,7 +38,7 @@ export default function SignupPage() {
         throw new Error(data.error || 'Signup failed. Please try again.');
       }
 
-      // Auto-redirect based on role
+     
       if (data.user.role === 'admin') {
         router.push('/admin');
       } else {
@@ -55,7 +55,7 @@ export default function SignupPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-50 px-4 py-12 dark:bg-zinc-950 sm:px-6 lg:px-8 transition-colors duration-300">
       <div className="w-full max-w-md space-y-8">
-        {/* Header */}
+        
         <div className="flex flex-col items-center text-center">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-tr from-violet-600 to-indigo-600 text-white shadow-lg shadow-indigo-500/30 dark:shadow-indigo-500/10">
             <User size={24} />
@@ -68,7 +68,7 @@ export default function SignupPage() {
           </p>
         </div>
 
-        {/* Signup Form Card */}
+        
         <div className="relative overflow-hidden rounded-3xl border border-zinc-200 bg-white/70 p-8 shadow-xl dark:border-zinc-800 dark:bg-zinc-900/50 dark:shadow-2xl/10 backdrop-blur-md">
           {error && (
             <div className="mb-6 rounded-xl bg-red-50 p-4 text-sm text-red-800 dark:bg-red-950/30 dark:text-red-400">
@@ -176,7 +176,7 @@ export default function SignupPage() {
             </button>
           </form>
 
-          {/* Direct link back to Login */}
+          
           <div className="mt-6 border-t border-zinc-100 pt-6 text-center dark:border-zinc-800">
             <p className="text-xs text-zinc-500 dark:text-zinc-400">
               Already have an account?{' '}

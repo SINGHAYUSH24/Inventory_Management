@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Shield, Mail, Lock, Database, CheckCircle, AlertTriangle, Loader2, ArrowRight } from 'lucide-react';
 
-export default function LoginPage() {
+function LoginPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const unauthorizedError = searchParams.get('error') === 'unauthorized';
@@ -15,7 +15,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(unauthorizedError ? 'Please log in to access this page.' : '');
 
-  // DB initialization state
+
   const [dbStatus, setDbStatus] = useState<{ connected: boolean; hasUrl: boolean } | null>(null);
   const [initLoading, setInitLoading] = useState(false);
   const [initMessage, setInitMessage] = useState('');
@@ -43,7 +43,6 @@ export default function LoginPage() {
       if (res.ok) {
         setInitMessage('Database initialized and seeded successfully!');
         setDbStatus({ connected: true, hasUrl: true });
-        // Refresh page status
         setTimeout(() => checkDbStatus(), 2000);
       } else {
         setError(data.error || 'Failed to initialize database.');
@@ -78,7 +77,6 @@ export default function LoginPage() {
         throw new Error(data.error || 'Login failed. Please try again.');
       }
 
-      // Redirect depending on user role
       if (data.user.role === 'admin') {
         router.push('/admin');
       } else {
@@ -92,20 +90,11 @@ export default function LoginPage() {
     }
   };
 
-  const autofillUser = (role: 'admin' | 'seller') => {
-    if (role === 'admin') {
-      setEmail('admin@inventory.com');
-      setPassword('admin123');
-    } else {
-      setEmail('seller@inventory.com');
-      setPassword('seller123');
-    }
-  };
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-50 px-4 py-12 dark:bg-zinc-950 sm:px-6 lg:px-8 transition-colors duration-300">
       <div className="w-full max-w-md space-y-8">
-        {/* Brand Header */}
+        
         <div className="flex flex-col items-center text-center">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-tr from-violet-600 to-indigo-600 text-white shadow-lg shadow-indigo-500/30 dark:shadow-indigo-500/10">
             <Shield size={24} />
@@ -118,7 +107,7 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Database Alert / Init Box */}
+       
         {dbStatus && (!dbStatus.hasUrl || !dbStatus.connected) && (
           <div className="rounded-2xl border border-amber-200 bg-amber-50/50 p-4 text-sm text-amber-800 dark:border-amber-900/30 dark:bg-amber-950/20 dark:text-amber-400 backdrop-blur-xs">
             <div className="flex items-start gap-3">
@@ -165,7 +154,7 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* Login Form Card */}
+        
         <div className="relative overflow-hidden rounded-3xl border border-zinc-200 bg-white/70 p-8 shadow-xl dark:border-zinc-800 dark:bg-zinc-900/50 dark:shadow-2xl/10 backdrop-blur-md">
           {error && (
             <div className="mb-6 rounded-xl bg-red-50 p-4 text-sm text-red-800 dark:bg-red-950/30 dark:text-red-400">
@@ -245,30 +234,22 @@ export default function LoginPage() {
             </p>
           </div>
 
-          {/* Quick Demo Credentials */}
-          <div className="mt-8 border-t border-zinc-100 pt-6 dark:border-zinc-800">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-              Demo Credentials (Autofill)
-            </h4>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => autofillUser('admin')}
-                className="flex items-center gap-1.5 rounded-lg bg-violet-50 px-2.5 py-1.5 text-xs font-semibold text-violet-700 hover:bg-violet-100 dark:bg-violet-950/40 dark:text-violet-400 dark:hover:bg-violet-950/60 cursor-pointer"
-              >
-                <span>Admin Panel</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => autofillUser('seller')}
-                className="flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-400 dark:hover:bg-emerald-950/60 cursor-pointer"
-              >
-                <span>Seller Desk</span>
-              </button>
-            </div>
-          </div>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-zinc-950">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-violet-600 border-t-transparent" />
+        </div>
+      }
+    >
+      <LoginPageInner />
+    </Suspense>
   );
 }
