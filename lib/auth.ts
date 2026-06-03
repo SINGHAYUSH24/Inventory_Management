@@ -1,7 +1,10 @@
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'inventory-system-secure-key-32-characters-minimum';
+const JWT_SECRET = process.env.JWT_SECRET;
+if(!JWT_SECRET) {
+  throw new Error('JWT_SECRET is not defined');
+}
 const key = new TextEncoder().encode(JWT_SECRET);
 
 export interface SessionUser {
@@ -15,7 +18,7 @@ export async function signJWT(payload: any): Promise<string> {
   return await new SignJWT(payload)
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime('2h')
+    .setExpirationTime('1h')
     .sign(key);
 }
 
@@ -59,7 +62,7 @@ export async function setAuthCookie(user: SessionUser) {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
-    maxAge: 60 * 60 * 2, // 2 hours
+    maxAge: 60 * 60 * 1,
     path: '/',
   });
 }

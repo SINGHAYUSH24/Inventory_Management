@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react';
 import { 
   Package, Plus, Edit2, Trash2, CheckCircle, XCircle, Search, 
-  Tag, Info, ShoppingBag, Loader2, ArrowUpDown, AlertCircle, RefreshCw
+  Tag, Info, ShoppingBag, Loader2, ArrowUpDown, AlertCircle, RefreshCw,
+  Scale, ShieldAlert, GitCompare
 } from 'lucide-react';
-import { formatINR, SUPPORTED_UNITS, Unit } from '@/lib/conversion';
+import { formatINR } from '@/lib/conversion';
 
 interface Product {
   id: number;
@@ -40,10 +41,19 @@ interface Order {
   items: OrderItem[];
 }
 
+interface DbUnit {
+  id?: number;
+  name: string;
+  unit_code: string;
+  dimension: 'weight' | 'volume' | 'count';
+  factor_to_base: number;
+}
+
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<'inventory' | 'orders'>('inventory');
+  const [activeTab, setActiveTab] = useState<'inventory' | 'orders' | 'units'>('inventory');
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [units, setUnits] = useState<DbUnit[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [error, setError] = useState('');
@@ -60,9 +70,19 @@ export default function AdminDashboard() {
   const [prodSku, setProdSku] = useState('');
   const [prodDesc, setProdDesc] = useState('');
   const [prodCat, setProdCat] = useState('');
-  const [prodUnit, setProdUnit] = useState<Unit>('kg');
+  const [prodUnit, setProdUnit] = useState('kg');
   const [prodPrice, setProdPrice] = useState('');
   const [prodStock, setProdStock] = useState('');
+
+  // Unit modal states
+  const [unitModalOpen, setUnitModalOpen] = useState(false);
+  const [editingUnit, setEditingUnit] = useState<DbUnit | null>(null);
+  const [unitName, setUnitName] = useState('');
+  const [unitCode, setUnitCode] = useState('');
+  const [unitDimension, setUnitDimension] = useState<'weight' | 'volume' | 'count'>('weight');
+  const [unitFactor, setUnitFactor] = useState('');
+
+  const DEFAULT_UNITS = ['g', 'kg', 'mL', 'L', 'items'];
 
   useEffect(() => {
     fetchData();
@@ -72,19 +92,28 @@ export default function AdminDashboard() {
     setLoading(true);
     setError('');
     try {
-      const [prodRes, ordRes] = await Promise.all([
+      const [prodRes, ordRes, unitRes] = await Promise.all([
         fetch('/api/products'),
-        fetch('/api/orders')
+        fetch('/api/orders'),
+        fetch('/api/units')
       ]);
 
       const prodData = await prodRes.json();
       const ordData = await ordRes.json();
+      const unitData = await unitRes.json();
 
       if (!prodRes.ok) throw new Error(prodData.error || 'Failed to fetch products');
       if (!ordRes.ok) throw new Error(ordData.error || 'Failed to fetch orders');
+      if (!unitRes.ok) throw new Error(unitData.error || 'Failed to fetch units');
 
       setProducts(prodData.products || []);
       setOrders(ordData.orders || []);
+      setUnits(unitData.units || []);
+      
+      // Default prodUnit to first available unit code if not set
+      if (unitData.units && unitData.units.length > 0) {
+        setProdUnit(unitData.units[0].unit_code);
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to load dashboard data.');
     } finally {
@@ -98,7 +127,7 @@ export default function AdminDashboard() {
     setProdSku('');
     setProdDesc('');
     setProdCat('');
-    setProdUnit('kg');
+    setProdUnit(units[0]?.unit_code || 'kg');
     setProdPrice('');
     setProdStock('');
     setError('');
@@ -111,7 +140,7 @@ export default function AdminDashboard() {
     setProdSku(p.sku);
     setProdDesc(p.description || '');
     setProdCat(p.category || '');
-    setProdUnit(p.base_unit as Unit);
+    setProdUnit(p.base_unit);
     setProdPrice(p.base_price.toString());
     setProdStock(p.stock_quantity.toString());
     setError('');
@@ -193,10 +222,84 @@ export default function AdminDashboard() {
       fetchData();
     } catch (err: any) {
       setError(err.message || 'Failed to update order status.');
-      // Scroll to error
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  // Unit rate CRUD handlers
+  const openCreateUnitModal = () => {
+    setEditingUnit(null);
+    setUnitName('');
+    setUnitCode('');
+    setUnitDimension('weight');
+    setUnitFactor('');
+    setError('');
+    setUnitModalOpen(true);
+  };
+
+  const openEditUnitModal = (u: DbUnit) => {
+    setEditingUnit(u);
+    setUnitName(u.name);
+    setUnitCode(u.unit_code);
+    setUnitDimension(u.dimension);
+    setUnitFactor(u.factor_to_base.toString());
+    setError('');
+    setUnitModalOpen(true);
+  };
+
+  const handleUnitSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+
+    if (!unitName.trim() || !unitCode.trim() || !unitFactor) {
+      setError('Please fill in Name, Code, and Conversion Factor.');
+      return;
+    }
+
+    const payload = {
+      name: unitName,
+      unit_code: unitCode,
+      dimension: unitDimension,
+      factor_to_base: parseFloat(unitFactor)
+    };
+
+    try {
+      const url = editingUnit ? `/api/units/${editingUnit.unit_code}` : '/api/units';
+      const method = editingUnit ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Operation failed');
+
+      setSuccess(editingUnit ? 'Unit exchange rate updated.' : 'Custom unit conversion rate created.');
+      setUnitModalOpen(false);
+      fetchData();
+    } catch (err: any) {
+      setError(err.message || 'Failed to save unit rate.');
+    }
+  };
+
+  const handleDeleteUnit = async (code: string) => {
+    if (!confirm(`Are you sure you want to delete unit "${code}"?`)) return;
+    setError('');
+    setSuccess('');
+    try {
+      const res = await fetch(`/api/units/${code}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to delete unit.');
+
+      setSuccess('Unit conversion rate deleted successfully.');
+      fetchData();
+    } catch (err: any) {
+      setError(err.message || 'Failed to delete unit.');
     }
   };
 
@@ -225,7 +328,7 @@ export default function AdminDashboard() {
             Control Dashboard
           </h1>
           <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-            Real-time catalog control, decimal inventories, and incoming orders audit logs.
+            Real-time catalog control, physical conversions exchange rates, and incoming orders audit logs.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -236,14 +339,25 @@ export default function AdminDashboard() {
             <RefreshCw size={16} />
             <span>Reload</span>
           </button>
-          <button
-            onClick={openCreateModal}
-            id="btn-add-product"
-            className="flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2 text-sm font-bold text-white shadow-md shadow-violet-500/20 transition-all hover:bg-violet-500 cursor-pointer"
-          >
-            <Plus size={16} />
-            <span>Add Product</span>
-          </button>
+          
+          {activeTab === 'units' ? (
+            <button
+              onClick={openCreateUnitModal}
+              className="flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2 text-sm font-bold text-white shadow-md shadow-violet-500/20 transition-all hover:bg-violet-500 cursor-pointer"
+            >
+              <Plus size={16} />
+              <span>Add Exchange Rate</span>
+            </button>
+          ) : (
+            <button
+              onClick={openCreateModal}
+              id="btn-add-product"
+              className="flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2 text-sm font-bold text-white shadow-md shadow-violet-500/20 transition-all hover:bg-violet-500 cursor-pointer"
+            >
+              <Plus size={16} />
+              <span>Add Product</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -325,6 +439,16 @@ export default function AdminDashboard() {
             }`}
           >
             Quotation Logs ({orders.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('units')}
+            className={`pb-4 text-sm font-bold border-b-2 px-1 transition-colors cursor-pointer ${
+              activeTab === 'units'
+                ? 'border-violet-600 text-violet-600 dark:border-violet-400 dark:text-violet-400'
+                : 'border-transparent text-zinc-500 hover:border-zinc-300 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-300'
+            }`}
+          >
+            Exchange Rates ({units.length})
           </button>
         </nav>
       </div>
@@ -436,7 +560,7 @@ export default function AdminDashboard() {
             </div>
           )}
         </div>
-      ) : (
+      ) : activeTab === 'orders' ? (
         <div className="space-y-6">
           {/* Orders log view */}
           {orders.length === 0 ? (
@@ -555,6 +679,78 @@ export default function AdminDashboard() {
             </div>
           )}
         </div>
+      ) : (
+        /* Exchange Rates Tab */
+        <div className="space-y-6">
+          <div className="rounded-2xl bg-zinc-100/50 p-4 text-sm text-zinc-700 dark:bg-zinc-900/50 dark:text-zinc-400 flex items-start gap-2.5">
+            <Scale className="h-5 w-5 text-indigo-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold">Conversion reference guide</p>
+              <p className="text-xs mt-1">
+                Conversion factors are stored as multiplier values relative to the base dimension units: 
+                <strong> Grams (g)</strong> for weights, 
+                <strong> Milliliters (mL)</strong> for liquids, and 
+                <strong> Items (count)</strong> for item counts.
+              </p>
+            </div>
+          </div>
+
+          <div className="overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-xs dark:border-zinc-800 dark:bg-zinc-900/40">
+            <table className="w-full text-left text-sm text-zinc-600 dark:text-zinc-400">
+              <thead className="bg-zinc-50/50 text-xs font-bold uppercase tracking-wider text-zinc-500 dark:bg-zinc-900/50 dark:text-zinc-400 border-b border-zinc-200 dark:border-zinc-800">
+                <tr>
+                  <th className="px-6 py-4">Unit Name</th>
+                  <th className="px-6 py-4 font-mono">Unit Code</th>
+                  <th className="px-6 py-4">Physical Dimension</th>
+                  <th className="px-6 py-4 text-right">Factor to Base Unit</th>
+                  <th className="px-6 py-4 text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+                {units.map((u) => {
+                  const isProtected = DEFAULT_UNITS.includes(u.unit_code);
+                  const baseRef = u.dimension === 'weight' ? 'g' : u.dimension === 'volume' ? 'mL' : 'items';
+                  return (
+                    <tr key={u.unit_code} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/10 transition-colors">
+                      <td className="px-6 py-4 font-semibold text-zinc-900 dark:text-zinc-50">{u.name}</td>
+                      <td className="px-6 py-4 font-mono text-xs font-bold text-violet-600 dark:text-violet-400">{u.unit_code}</td>
+                      <td className="px-6 py-4 capitalize font-semibold">{u.dimension}</td>
+                      <td className="px-6 py-4 text-right font-mono font-bold">
+                        <span>{u.factor_to_base}</span>
+                        <span className="text-xs text-zinc-400 font-medium ml-1"> {baseRef}</span>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        {isProtected ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-zinc-400 uppercase">
+                            <ShieldAlert size={12} />
+                            Protected
+                          </span>
+                        ) : (
+                          <div className="flex items-center justify-center gap-2">
+                            <button
+                              onClick={() => openEditUnitModal(u)}
+                              className="rounded-lg p-1.5 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50 cursor-pointer"
+                              title="Edit conversion factor"
+                            >
+                              <Edit2 size={16} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteUnit(u.unit_code)}
+                              className="rounded-lg p-1.5 text-zinc-500 hover:bg-red-50 hover:text-red-600 dark:text-zinc-400 dark:hover:bg-red-950/20 dark:hover:text-red-500 cursor-pointer"
+                              title="Delete unit rate"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
       )}
 
       {/* Product Creation / Editing Modal */}
@@ -622,11 +818,13 @@ export default function AdminDashboard() {
                   </label>
                   <select
                     value={prodUnit}
-                    onChange={(e) => setProdUnit(e.target.value as Unit)}
+                    onChange={(e) => setProdUnit(e.target.value)}
                     className="mt-1.5 block w-full rounded-2xl border border-zinc-200 bg-white px-4 py-2.5 text-sm focus:border-violet-500 focus:outline-hidden dark:border-zinc-800 dark:bg-zinc-950"
                   >
-                    {Object.entries(SUPPORTED_UNITS).map(([key, value]) => (
-                      <option key={key} value={key}>{value.name}</option>
+                    {units.map((u) => (
+                      <option key={u.unit_code} value={u.unit_code}>
+                        {u.name} ({u.unit_code})
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -688,6 +886,109 @@ export default function AdminDashboard() {
                   className="rounded-2xl bg-violet-600 px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-violet-500/20 hover:bg-violet-500 cursor-pointer"
                 >
                   {editingProduct ? 'Save Changes' : 'Create Product'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Exchange Rate / Unit Modal */}
+      {unitModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-lg overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900">
+            <div className="border-b border-zinc-100 px-6 py-4 dark:border-zinc-800 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
+                {editingUnit ? 'Edit Unit Conversion Factor' : 'Add Custom Physical Unit'}
+              </h3>
+              <button
+                onClick={() => setUnitModalOpen(false)}
+                className="rounded-lg p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleUnitSubmit} className="p-6 space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                    Unit Name
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={unitName}
+                    onChange={(e) => setUnitName(e.target.value)}
+                    placeholder="e.g. Dozen, Pack of 50, Barrel"
+                    className="mt-1.5 block w-full rounded-2xl border border-zinc-200 bg-white px-4 py-2.5 text-sm focus:border-violet-500 focus:outline-hidden dark:border-zinc-800 dark:bg-zinc-950"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                    Unit Code (Unique Identifier)
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    disabled={editingUnit !== null}
+                    value={unitCode}
+                    onChange={(e) => setUnitCode(e.target.value)}
+                    placeholder="e.g. box12, barrel, mg"
+                    className="mt-1.5 block w-full rounded-2xl border border-zinc-200 bg-white px-4 py-2.5 text-sm font-mono focus:border-violet-500 focus:outline-hidden dark:border-zinc-800 dark:bg-zinc-950 disabled:opacity-50"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                    Physical Dimension
+                  </label>
+                  <select
+                    disabled={editingUnit !== null}
+                    value={unitDimension}
+                    onChange={(e) => setUnitDimension(e.target.value as any)}
+                    className="mt-1.5 block w-full rounded-2xl border border-zinc-200 bg-white px-4 py-2.5 text-sm focus:border-violet-500 focus:outline-hidden dark:border-zinc-800 dark:bg-zinc-950 disabled:opacity-50"
+                  >
+                    <option value="weight">Weight (g / kg)</option>
+                    <option value="volume">Volume (mL / L)</option>
+                    <option value="count">Count (items)</option>
+                  </select>
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                    Factor to Base Unit
+                  </label>
+                  <input
+                    type="number"
+                    step="0.00000001"
+                    required
+                    value={unitFactor}
+                    onChange={(e) => setUnitFactor(e.target.value)}
+                    placeholder="e.g. 12.0 for dozen, 159000 for oil barrel relative to mL"
+                    className="mt-1.5 block w-full rounded-2xl border border-zinc-200 bg-white px-4 py-2.5 text-sm focus:border-violet-500 focus:outline-hidden dark:border-zinc-800 dark:bg-zinc-950 font-mono"
+                  />
+                  <p className="text-[10px] text-zinc-400 mt-1">
+                    How many base units does 1 unit of this represent? 
+                    (e.g., Weight: 1 kg = 1000.0 g, Count: 1 box12 = 12.0 items)
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-zinc-100 dark:border-zinc-800">
+                <button
+                  type="button"
+                  onClick={() => setUnitModalOpen(false)}
+                  className="rounded-2xl border border-zinc-200 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-zinc-300 dark:hover:bg-zinc-800 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-2xl bg-violet-600 px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-violet-500/20 hover:bg-violet-500 cursor-pointer"
+                >
+                  {editingUnit ? 'Save Changes' : 'Create Unit'}
                 </button>
               </div>
             </form>

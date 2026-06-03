@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSql } from '@/lib/db';
 import { getSessionUser } from '@/lib/auth';
-import { getConversionFactor, Unit } from '@/lib/conversion';
 
 export async function GET() {
   try {
@@ -80,6 +79,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Database connection missing.' }, { status: 500 });
     }
 
+    // Load dynamic units mapping from database
+    const dbUnits = await sql`
+      SELECT unit_code, dimension, factor_to_base::float as factor_to_base
+      FROM unit_conversions
+    `;
+    const unitsMap: Record<string, { dimension: string; factorToBase: number }> = {};
+    dbUnits.forEach(u => {
+      unitsMap[u.unit_code] = {
+        dimension: u.dimension,
+        factorToBase: u.factor_to_base
+      };
+    });
+
     let totalPrice = 0;
     const validatedItems = [];
 
@@ -104,16 +116,24 @@ export async function POST(request: Request) {
 
       const product = products[0];
 
-      let conversionFactor = 1;
-      try {
-        conversionFactor = getConversionFactor(orderedUnit as Unit, product.base_unit as Unit);
-      } catch (err: any) {
+      const fromInfo = unitsMap[orderedUnit];
+      const toInfo = unitsMap[product.base_unit];
+
+      if (!fromInfo || !toInfo) {
         return NextResponse.json(
-          { error: `Unit conversion check failed for "${product.name}": ${err.message}` },
+          { error: `Unsupported units: "${orderedUnit}" or "${product.base_unit}" for product "${product.name}".` },
           { status: 400 }
         );
       }
 
+      if (fromInfo.dimension !== toInfo.dimension) {
+        return NextResponse.json(
+          { error: `Incompatible units for product "${product.name}": Cannot convert from ${orderedUnit} (${fromInfo.dimension}) to ${product.base_unit} (${toInfo.dimension})` },
+          { status: 400 }
+        );
+      }
+
+      const conversionFactor = fromInfo.factorToBase / toInfo.factorToBase;
       const qtyInBase = parsedQty * conversionFactor;
       const calculatedPrice = qtyInBase * product.base_price;
 
@@ -170,3 +190,4 @@ export async function POST(request: Request) {
     );
   }
 }
+

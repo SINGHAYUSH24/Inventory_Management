@@ -27,7 +27,17 @@ export async function initializeDatabase() {
     throw new Error('DATABASE_URL environment variable is missing.');
   }
 
-  // Create tables in sequence or in a multi-statement query
+  await sql`
+    CREATE TABLE IF NOT EXISTS unit_conversions (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(100) NOT NULL,
+      unit_code VARCHAR(20) UNIQUE NOT NULL,
+      dimension VARCHAR(50) NOT NULL,
+      factor_to_base NUMERIC(20, 8) NOT NULL,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+
   await sql`
     CREATE TABLE IF NOT EXISTS users (
       id SERIAL PRIMARY KEY,
@@ -90,6 +100,20 @@ export async function initializeDatabase() {
       ('seller@inventory.com', ${sellerHash}, 'Sales Representative', 'seller')
     `;
     console.log('Seeded users.');
+  }
+
+  // Seed default units if they don't exist
+  const existingUnits = await sql`SELECT COUNT(*)::int as count FROM unit_conversions`;
+  if (existingUnits[0].count === 0) {
+    await sql`
+      INSERT INTO unit_conversions (name, unit_code, dimension, factor_to_base) VALUES
+      ('Grams (g)', 'g', 'weight', 1.00000000),
+      ('Kilograms (kg)', 'kg', 'weight', 1000.00000000),
+      ('Milliliters (mL)', 'mL', 'volume', 1.00000000),
+      ('Liters (L)', 'L', 'volume', 1000.00000000),
+      ('Items (count)', 'items', 'count', 1.00000000)
+    `;
+    console.log('Seeded base unit conversions.');
   }
 
   // Seed default products if they don't exist

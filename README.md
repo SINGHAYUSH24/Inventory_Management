@@ -169,9 +169,18 @@ $$\text{Calculated Price (INR)} = \text{Ordered Quantity} \times \text{Conversio
 6. Open your browser and navigate to `http://localhost:3000`.
 
 ### 3. Initialize & Seed Database
-- On the Login screen (`http://localhost:3000/login`), if the database tables are not yet created, a **"Database Setup Needed"** yellow alert will appear.
-- Click the **"Initialize Database Tables"** button to automatically run the DDL schema setup and seed default accounts/products.
-- Once completed, the alert disappears and you can log in immediately.
+You can initialize the database tables and seed test data using either the command line or the web application:
+
+#### Option A: Command Line (CLI)
+After configuring the `DATABASE_URL` in `.env.local`, run the migration script directly from your terminal:
+```bash
+npm run migrate
+```
+
+#### Option B: Web Application (UI)
+- Start the dev server (`npm run dev`) and open `http://localhost:3000/login`.
+- If database tables are not detected, a yellow **"Database Setup Needed"** alert will be shown.
+- Click the **"Initialize Database Tables"** button to run the DDL configuration and seed default data.
 
 ---
 

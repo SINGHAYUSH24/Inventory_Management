@@ -18,10 +18,8 @@ export default async function AdminLayout({
       <header className="sticky top-0 z-40 w-full border-b border-zinc-200 bg-white/80 backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-900/80">
         <div className="flex h-16 items-center justify-between px-6">
           <div className="flex items-center gap-3">
-            <span className="text-xl font-bold bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
-              IMS Admin
-            </span>
-            <span className="rounded-full bg-violet-100 px-2.5 py-0.5 text-xs font-semibold text-violet-800 dark:bg-violet-900/30 dark:text-violet-400">
+            
+            <span className="rounded-full bg-white px-2.5 py-0.5 text-xl font-semibold text-white dark:bg-blue-700/30 dark:text-white">
               Control Panel
             </span>
           </div>
