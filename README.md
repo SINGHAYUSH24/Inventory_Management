@@ -5,7 +5,11 @@ A full-stack, high-precision inventory control and order quotation system built 
 This system demonstrates advanced real-time calculation mechanics, role-based protection (Admin vs. Seller), and highly precise unit conversion workflows (e.g., Grams to Kilograms, Liters to Milliliters) backed by safe database types.
 
 ---
-
+##Login Credentials:
+1. Seller : email- seller@inventory.com
+            password - seller123
+2. Admin : email - admin@inventory.com
+          password -  admin123
 ## 🌟 Key Features
 
 1. **Role-Based Access Control (RBAC)**:
